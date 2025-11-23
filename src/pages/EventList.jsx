@@ -1,70 +1,73 @@
-import React, { useEffect, useState } from "react"
-import { Link } from "react-router-dom"
-import "../index.css"
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import "../index.css";
+import { EventAPI } from "../api/api";
 
 export default function EventList() {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   // Filters
-  const [title, setTitle] = useState("")
-  const [location, setLocation] = useState("")
-  const [eventDate, setEventDate] = useState("")
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [eventDate, setEventDate] = useState("");
 
   // Pagination
-  const [pageNumber, setPageNumber] = useState(1)
-  const [pageSize, setPageSize] = useState(5)
-  const [totalPages, setTotalPages] = useState(1)
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
 
   async function fetchEvents() {
     try {
-      setLoading(true)
-      setError(null)
+      setLoading(true);
+      setError(null);
 
-      const url = new URL(
-        "https://e45008af4b19.ngrok-free.app/api/v1/Event/paged"
-      )
+      const query = {
+        pageNumber,
+        pageSize,
+        title,
+        location,
+        eventDate,
+      };
 
-      url.searchParams.append("PageNumber", pageNumber)
-      url.searchParams.append("PageSize", pageSize)
-      if (title) url.searchParams.append("Title", title)
-      if (location) url.searchParams.append("Location", location)
-      if (eventDate) url.searchParams.append("EventDate", eventDate)
+      const data = await EventAPI.getEvents(query);
 
-      const res = await fetch(url)
-      if (!res.ok) throw new Error("Failed to fetch events")
-
-      const data = await res.json()
-      setEvents(data.data || [])
-      setTotalPages(data.totalPages || 1)
+      setEvents(data.data || []);
+      setTotalPages(data.totalPages || 1);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    fetchEvents()
-  }, [pageNumber, pageSize])
+    fetchEvents();
+  }, [pageNumber, pageSize]);
 
   useEffect(() => {
     const delay = setTimeout(() => {
-      setPageNumber(1)
-      fetchEvents()
-    }, 500)
-    return () => clearTimeout(delay)
-  }, [title, location, eventDate])
+      setPageNumber(1);
+      fetchEvents();
+    }, 500);
 
-  const nextPage = () => pageNumber < totalPages && setPageNumber(pageNumber + 1)
-  const prevPage = () => pageNumber > 1 && setPageNumber(pageNumber - 1)
+    return () => clearTimeout(delay);
+  }, [title, location, eventDate]);
+
+  const nextPage = () =>
+    pageNumber < totalPages && setPageNumber(pageNumber + 1);
+
+  const prevPage = () =>
+    pageNumber > 1 && setPageNumber(pageNumber - 1);
 
   return (
     <div>
       <header className="page-header">
         <h1>Upcoming Events</h1>
-        <p className="small muted">Browse, search, and book your next event.</p>
+        <p className="small muted">
+          Browse, search, and book your next event.
+        </p>
       </header>
 
       {/* Filters */}
@@ -101,8 +104,8 @@ export default function EventList() {
           className="input"
           value={pageSize}
           onChange={(e) => {
-            setPageSize(Number(e.target.value))
-            setPageNumber(1)
+            setPageSize(Number(e.target.value));
+            setPageNumber(1);
           }}
           style={{ width: 120 }}
         >
@@ -117,26 +120,41 @@ export default function EventList() {
       {error && <div style={{ color: "#dc2626" }}>{error}</div>}
 
       {!loading && events.length === 0 && (
-        <p className="muted" style={{ marginTop: 20 }}>No events found.</p>
+        <p className="muted" style={{ marginTop: 20 }}>
+          No events found.
+        </p>
       )}
 
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fill, minmax(280px, 1fr))",
           gap: "16px",
         }}
       >
         {events.map((ev) => {
-          const dateObj = new Date(ev.eventDate)
-          const isFull = ev.capacity && ev.bookingsCount >= ev.capacity
+          const dateObj = new Date(ev.eventDate);
+          const isFull =
+            ev.capacity && ev.bookingsCount >= ev.capacity;
 
           return (
-            <div key={ev.id} className="card" style={{ padding: "16px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+            <div
+              key={ev.id}
+              className="card"
+              style={{
+                padding: "16px",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+              }}
+            >
               <div>
                 <h3>{ev.title}</h3>
                 <p className="small muted">{ev.location}</p>
-                <p className="small muted">{dateObj.toLocaleString()}</p>
+                <p className="small muted">
+                  {dateObj.toLocaleString()}
+                </p>
                 <p
                   style={{
                     fontWeight: "bold",
@@ -149,13 +167,15 @@ export default function EventList() {
 
               <Link
                 to={`/events/${ev.id}`}
-                className={`btn ${isFull ? "btn-outline" : "btn-primary"}`}
+                className={`btn ${
+                  isFull ? "btn-outline" : "btn-primary"
+                }`}
                 style={{ marginTop: "12px" }}
               >
                 {isFull ? "View" : "Book"}
               </Link>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -169,16 +189,24 @@ export default function EventList() {
           marginBottom: "40px",
         }}
       >
-        <button className="btn btn-outline" disabled={pageNumber === 1} onClick={prevPage}>
+        <button
+          className="btn btn-outline"
+          disabled={pageNumber === 1}
+          onClick={prevPage}
+        >
           Previous
         </button>
         <span style={{ padding: "0.5rem", fontWeight: "bold" }}>
           Page {pageNumber} of {totalPages}
         </span>
-        <button className="btn btn-outline" disabled={pageNumber === totalPages} onClick={nextPage}>
+        <button
+          className="btn btn-outline"
+          disabled={pageNumber === totalPages}
+          onClick={nextPage}
+        >
           Next
         </button>
       </div>
     </div>
-  )
+  );
 }

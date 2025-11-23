@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { AuthAPI } from "../api/api";
 import '../index.css'
 
 export default function Login() {
@@ -10,7 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState(null)
-  const [mode, setMode] = useState('login') 
+  const [mode, setMode] = useState('login')
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -33,50 +34,30 @@ export default function Login() {
     if (!password) return setError('Password is required')
 
     try {
+      
       if (mode === 'login') {
-        // 🔹 LOGIN API CALL
-        const res = await fetch("https://e45008af4b19.ngrok-free.app/api/Auth/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password })
-        })
+        const data = await AuthAPI.login({ email, password })
 
-        if (!res.ok) {
-          const msg = await res.text()
-          throw new Error(msg || "Login failed")
-        }
-
-        const data = await res.json() 
         login({ email, token: data.token })
         navigate(from)
         return
       }
 
-      // 🔹 SIGNUP VALIDATION
+      
       if (!firstName) return setError('First name is required')
       if (!lastName) return setError('Last name is required')
       if (password.length < 8) return setError('Password must be at least 8 characters')
       if (!/\d/.test(password)) return setError('Password must contain at least one special character')
       if (password !== confirmPassword) return setError('Passwords do not match')
 
-      // 🔹 REGISTER API CALL
-      const res = await fetch("https://e45008af4b19.ngrok-free.app/api/Auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          firstName,
-          lastName
-        })
+      
+      const data = await AuthAPI.register({
+        email,
+        password,
+        firstName,
+        lastName
       })
 
-      if (!res.ok) {
-        const msg = await res.text()
-        throw new Error(msg || "Registration failed")
-      }
-
-      const data = await res.json()
       const fullName = `${firstName} ${lastName}`
       login({ email, name: fullName, token: data.token })
       navigate(from)
@@ -96,8 +77,6 @@ export default function Login() {
             <h3>Welcome to EventBooking</h3>
             <p>Discover and book events easily. Manage your bookings and stay organised.</p>
           </div>
-
-          
         </div>
 
         {/* Right side */}
